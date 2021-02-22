@@ -99,9 +99,9 @@ Under output directory:
       - norm3DVI_TSNE.pdf  
       - norm3DVI_UMAP.pdf
     
-![UMAP Visualization](/figures/norm3DVI_UMAP.pdf)
+![UMAP Visualization](/figures/norm3DVI_UMAP.png)
 
-![t-SNE Visualization](/figures/norm3DVI_TSNE.pdf)
+![t-SNE Visualization](/figures/norm3DVI_TSNE.png)
 
 ### 5. Creating 3DVI runs with your own data
 
