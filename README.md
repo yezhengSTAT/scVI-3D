@@ -81,7 +81,9 @@ conda activate schic-3dvi
 
 ### 3. Running 3DVI
 
-    python3.7 3DVI.py -b 10 -c 'whole' -r 1000000 -i "Path/to/3DVI/demoData" -o "Path/to/3DVI/results" -cs "Path/to/3DVI/supplementaryData/demoData_summary.txt" -g "Path/to/3DVI/supplementaryData/hg19.chrom.sizes" -br -n 100 -gpu -p 6 -pca 50 -up -tp -v
+    python3.7 3DVI.py -b 10 -c 'whole' -r 1000000 -i "Path/to/3DVI/demoData" -o "Path/to/3DVI/results" -cs "Path/to/3DVI/supplementaryData/demoData_summary.txt" -g "Path/to/3DVI/supplementaryData/hg19.chrom.sizes" -br -n 100 -gpu -p 10 -pca 50 -up -tp -v
+
+The above test run will take ~15min to finish.
 
 ### 4. Output from 3DVI
 
