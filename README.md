@@ -1,6 +1,6 @@
 # 3DVI: Normalization and De-noising of single-cell Hi-C Data
 
-Ye Zheng, Siqi Shen and Sündüz Keleş. Normalization and De-noising of single-cell Hi-C Data with BandNorm and 3DVI. bioRxiv (2021).
+Ye Zheng\*, Siqi Shen\* and Sündüz Keleş. Normalization and De-noising of single-cell Hi-C Data with BandNorm and 3DVI. bioRxiv (2021). $*$ contribute equally.
 
 
 ## What is 3DVI?
@@ -10,7 +10,7 @@ The advent of single-cell sequencing technologies in profiling 3D genome organiz
 
 Current version: 0.1
 
-![3DVI Model](./figures/model.png)
+![3DVI Model](/figures/model.png)
 
 
 
@@ -36,8 +36,9 @@ If you want to get the UMAP and t-SNE visualization, you will need two more modu
 
 For quick python module installation, python-requirements.txt is provided in this repository. Run
 
-		pip install -r python-requirements.txt
-
+```
+pip install -r python-requirements.txt
+```
 
 #### 1.1 [Alternative] Creating environment using conda.
 
@@ -81,7 +82,7 @@ conda activate schic-3dvi
 
 ### 3. Running 3DVI
 
-    python3.7 3DVI.py -b 'whole' -c 'whole' -r 1000000 -i "Path/to/3DVI/demoData" -o "Path/to/3DVI/results" -cs "Path/to/3DVI/supplementaryData/demoData_summary.txt" -g "Path/to/3DVI/supplementaryData/hg19.chrom.sizes" -br -n 100 -gpu -p 6 -pca 50 -up -tp -v
+    python3.7 3DVI.py -b 10 -c 'whole' -r 1000000 -i "Path/to/3DVI/demoData" -o "Path/to/3DVI/results" -cs "Path/to/3DVI/supplementaryData/demoData_summary.txt" -g "Path/to/3DVI/supplementaryData/hg19.chrom.sizes" -br -n 100 -gpu -p 6 -pca 50 -up -tp -v
 
 ### 4. Output from 3DVI
 
@@ -92,19 +93,21 @@ Under output directory:
       - norm3DVI_PCA50.txt
       - norm3DVI_latentEmbeddingFull.txt
     - norm3DVI/
-      - normalized count for each input scHi-C data with the same file name
+      - normalized count saved as a tab-separated file for each input scHi-C data with the same file name. 
       - ...
     - figures/
       - norm3DVI_TSNE.pdf  
       - norm3DVI_UMAP.pdf
     
-![UMAP Visualization](/figures/umap.pdf)
+![UMAP Visualization](/figures/norm3DVI_UMAP.pdf)
 
-![t-SNE Visualization](/figures/tsne.pdf)
+![t-SNE Visualization](/figures/norm3DVI_TSNE.pdf)
 
 ### 5. Creating 3DVI runs with your own data
 
 #### 5.1 Input scHi-C data (tab separated file)
+
+Locus-pair interactions for each cell are saved into one tab-separated file with five columns indicating locus pair A (chrA binA) interacting locus pair B (chrB binB) with count N.
 
 ```
 chr1    0       chr1    1000000 9
@@ -121,25 +124,29 @@ chr1    2000000 chr1    4000000 2
 
 ### 5.2 Cell summary file (tab separated file and this file is optional depending on the removal batch effect or not)
 
+Cell summary file provides all the cell interactin file name including the extension so that we can locate the input file using the ```inPath``` parameter and the cell file name listed in column ```name```. If batch effect need to be removed, please provide the batch related information in column ```batch```. For UMAP or t-SNE visualization where cell is colored by label, please provide the cluster or cell type label in column ```cell_type```. If no batch bias removal or visualization figure generation is needed, this file can be not provided to the run. Column names need to be exactly set to ```name```, ```batch``` and ```cell_type```.
+
 ```
-name    batch   cell_type       depth   sparsity
-181218_21yr_2_B11_AD001_Astro.txt       181218_21yr     Astro   333281  12832
-181218_21yr_2_B6_AD006_Astro.txt        181218_21yr     Astro   875773  26222
-181218_21yr_2_B6_AD007_Astro.txt        181218_21yr     Astro   596688  20504
-181218_21yr_2_D1_AD006_Astro.txt        181218_21yr     Astro   627360  21513
-181218_21yr_2_D6_AD008_Astro.txt        181218_21yr     Astro   429143  14796
-181218_21yr_2_E12_AD006_Astro.txt       181218_21yr     Astro   582766  19050
-181218_21yr_2_E6_AD010_Astro.txt        181218_21yr     Astro   650588  20088
-181218_21yr_2_G7_AD004_Astro.txt        181218_21yr     Astro   613362  20120
-181218_21yr_2_H9_AD001_Astro.txt        181218_21yr     Astro   381341  15958
-181218_21yr_3_A12_AD008_Astro.txt       181218_21yr     Astro   784037  19827
-181218_21yr_3_A9_AD008_Astro.txt        181218_21yr     Astro   665270  22713
-181218_21yr_3_B9_AD007_Astro.txt        181218_21yr     Astro   1502920 32304
-181218_21yr_3_D5_AD008_Astro.txt        181218_21yr     Astro   1025140 21515
-181218_21yr_3_E12_AD010_Astro.txt       181218_21yr     Astro   779923  19526
+name    batch   cell_type       
+181218_21yr_2_B11_AD001_Astro.txt       181218_21yr     Astro
+181218_21yr_2_B6_AD006_Astro.txt        181218_21yr     Astro
+181218_21yr_2_B6_AD007_Astro.txt        181218_21yr     Astro
+181218_21yr_2_D1_AD006_Astro.txt        181218_21yr     Astro
+181218_21yr_2_D6_AD008_Astro.txt        181218_21yr     Astro
+181218_21yr_2_E12_AD006_Astro.txt       181218_21yr     Astro
+181218_21yr_2_E6_AD010_Astro.txt        181218_21yr     Astro
+181218_21yr_2_G7_AD004_Astro.txt        181218_21yr     Astro
+181218_21yr_2_H9_AD001_Astro.txt        181218_21yr     Astro
+181218_21yr_3_A12_AD008_Astro.txt       181218_21yr     Astro
+181218_21yr_3_A9_AD008_Astro.txt        181218_21yr     Astro
+181218_21yr_3_B9_AD007_Astro.txt        181218_21yr     Astro
+181218_21yr_3_D5_AD008_Astro.txt        181218_21yr     Astro
+181218_21yr_3_E12_AD010_Astro.txt       181218_21yr     Astro
 ```
 
 ### 5.3 Genome size file (tab separated file)
+
+Here is an example of hg19 chrom size file. You can remove the chromosome that you do not want to process by 3DVI for example chrY here as an instance.
 
 ```
 chr1    249250621
