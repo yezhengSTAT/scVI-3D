@@ -1,12 +1,11 @@
 # 3DVI: Normalization and De-noising of single-cell Hi-C Data
 
-Ye Zheng\*, Siqi Shen\* and Sündüz Keleş. Normalization and De-noising of single-cell Hi-C Data with BandNorm and 3DVI. bioRxiv (2021). $*$ contribute equally.
+Ye Zheng\*, Siqi Shen\* and Sündüz Keleş. Normalization and De-noising of single-cell Hi-C Data with BandNorm and 3DVI. bioRxiv (2021). * contribute equally.
 
 
 ## What is 3DVI?
 
-The advent of single-cell sequencing technologies in profiling 3D genome organization led to the development of single-cell high-throughput chromatin conformation (scHi-C) assays. To explicitly capture chromatin conformation features and distinguish cells based on their 3D genome organizations, we developed a fast band normalization approach, [BandNorm](https://github.com/sshen82/BandNorm), as well as a deep generative modeling framework, 3DVI, for more structured modeling of scHi-C data. Systematic benchmarking and comparisons to existing scHi-C analysis methods on a compendium of datasets with known cell types indicated that BandNorm can be as or even more effective than more structured modeling of scHi-C data for cell-type identification.  In benchmarking experiments with respect to downstream analysis of scHi-C data, BandNorm resulted in better identification of interaction domains compared to other methods. In contrast, 3DVI intrinsic de-noising provided additional power for rare cell types with respect to 3D genome structure recovery, including the A/B compartment, topologically associating domains, and detection of  significant interacting locus-pairs. Further investigations revealed that existing scHi-C models propagate the batch effects from their low-dimensional embeddings to the resulting imputation matrices. BandNorm, coupled with the Harmony method, exhibited robustness to sequencing depth and sparsity biases and was least impacted by the batch effects. 3DVI incorporates the batch effect into its deep generative model, and eliminates the batch effects from both the embeddings and de-noised realizations. Computational speeds of BandNorm and 3DVI  also present an advantage over current existing scHi-C methods.
-
+The advent of single-cell sequencing technologies in profiling 3D genome organization led to the development of single-cell high-throughput chromatin conformation (scHi-C) assays. To explicitly capture chromatin conformation features and distinguish cells based on their 3D genome organizations, we developed a fast band normalization approach, [BandNorm](https://github.com/sshen82/BandNorm), as well as a deep generative modeling framework, 3DVI, for more structured modeling of scHi-C data. At the individual cell resolution, heterogeneity driven by the stochastic nature of chromatin fiber, various nuclear processes, and unwanted variation due to sequencing depths and batch effects poses major analytical challenges for inferring single cell-level 3D genome organizations. We develop a deep generative model, named 3DVI, which systematically takes into account these 3D genome structural properties such as the band bias, sequencing depth effect, zero inflation, sparsity impact, and batch effects of scHi-C data.  3DVI is constructed based on the parametric count models of Poisson and Negative Binomial that have been successfully used in bulk measurements of chromatin conformation capture data. Single-cell resolution and the growth in the sizes of emerging scHi-C datasets have created opportunities for exploiting non-linearities in the data. Variational autoencoders offer scalable ways of learning nonlinear maps and have been successfully applied to model measurements from single cells. Motivated by the recent deep learning modeling approaches for single-cell transcription and chromatin accessibility, 3DVI constructs the generative modeling framework on the band matrices for the dimension reduction and de-noising of scHi-C data.
 
 Current version: 0.1
 
@@ -21,7 +20,7 @@ Current version: 0.1
 
     git clone https://github.com/yezhengSTAT/3DVI
 
-3DVI installation is finished once you successsfully git clone the repository. We provide a demo scHi-C data, sampled 400 cells of four cell types from [Ecker2019](https://www.nature.com/articles/s41592-019-0547-z), for test run.  The raw input data will be downloaded with this repository. In preparation for such run, you will need to have python (>=3.7) available on your server with corresponding modules required: 
+3DVI installation is finished once you successsfully git clone the repository. We provide a demo scHi-C data, sampled 400 cells of Astro, ODC, MG, Sst, four cell types from [Ecker2019](https://www.nature.com/articles/s41592-019-0547-z) for test run.  The raw input data will be downloaded with this repository. In preparation for such run, you will need to have python (>=3.7) available on your server with corresponding modules required: 
   - numpy (>= 1.13.1)
   - scanpy (>= 1.6.0)
   - pandas (>= 1.0.3)
@@ -107,7 +106,7 @@ Under output directory:
 
 #### 5.1 Input scHi-C data (tab separated file)
 
-Locus-pair interactions for each cell are saved into one tab-separated file with five columns indicating locus pair A (chrA binA) interacting locus pair B (chrB binB) with count N.
+Locus-pair interactions for each cell are saved into one tab-separated file with five columns and no header indicating locus pair A (chrA binA) interacting locus pair B (chrB binB) with count N.
 
 ```
 chr1    0       chr1    1000000 9
@@ -146,7 +145,7 @@ name    batch   cell_type
 
 ### 5.3 Genome size file (tab separated file)
 
-Here is an example of hg19 chrom size file. You can remove the chromosome that you do not want to process by 3DVI for example chrY here as an instance.
+Here is an example of hg19 chrom size file which is tab-separated and no header. You can remove the chromosome that you do not want to process by 3DVI for example chrY here as an instance.
 
 ```
 chr1    249250621
