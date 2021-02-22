@@ -55,7 +55,7 @@ conda env create -f 3DVI_conda_environment.yml
 conda activate schic-3dvi
 ```
 
-### 2. Setting the parameters in the "FreeHiC_parameters'' file
+### 2. Setting parameters for 3DVI
 
     Parameters for the 3DVI runs:
     bandMax       (-b/--bandMax)        : Maximum genomic distance to be processed, e.g. 10. Use "whole" to include all the band matrix for each chromosome. Default is "whole".
