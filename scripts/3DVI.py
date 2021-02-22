@@ -89,12 +89,12 @@ class Process(object):
         return cell_band
     
 def read_file(file):
-    df = pd.read_csv(file, sep = "\t", header = 0, names = ['chrA', 'binA', 'chrB', 'binB', 'counts'])
+    df = pd.read_csv(file, sep = "\t", header = None, names = ['chrA', 'binA', 'chrB', 'binB', 'counts'])
     df.loc[:,'cell'] = file
     return df
 
 def read_file_chrom(file, used_chroms):
-    dfTmp = pd.read_csv(file, sep = "\t", header = 0, names = ['chrA', 'binA', 'chrB', 'binB', 'counts'])
+    dfTmp = pd.read_csv(file, sep = "\t", header = None, names = ['chrA', 'binA', 'chrB', 'binB', 'counts'])
     dfTmp.loc[:,'cell'] = file    
     if used_chroms == 'whole':
         df = dfTmp
@@ -190,8 +190,8 @@ def get_args():
     parser.add_argument('-gpu', '--gpuFlag', help = '(Optional) Use GPU or not. Default is False.', action='store_true')
     parser.add_argument('-p', '--parallelCPU', help = '(Optional) Number of CPUs to be used for parallel running. Default is 1 and no parallel computing is used.', default = 1)
     parser.add_argument('-pca', '--pcaNum', help = '(Optional) Number of principal components to be writen out. Default is 50.', default = 50)
-    parser.add_argument('-up', '--umapPlot', help = '(Optional) Plot UMAP of latent embeddings. Default is False', action='store_true')
-    parser.add_argument('-tp', '--tsnePlot', help = '(Optional) Plot t-SNE of latent embeddings. Default is False', action='store_true')
+    parser.add_argument('-up', '--umapPlot', help = '(Optional) Plot UMAP of latent embeddings. Default is False.', action='store_true')
+    parser.add_argument('-tp', '--tsnePlot', help = '(Optional) Plot t-SNE of latent embeddings. Default is False.', action='store_true')
     parser.add_argument('-v', '--verbose', help = '(Optional) Verbose. Default is False.', action='store_true')
 
     
@@ -277,7 +277,7 @@ if __name__ == "__main__":
         print('t-SNE plot:', args.tsnePlot)
    
     
-
+    outdir = args.outdir
     ## number of bin per chromosome
     print("Caculate total number of bin per chromosome.")
     binSize = pd.read_csv(args.genome, sep = "\t", header = None)
@@ -338,7 +338,7 @@ if __name__ == "__main__":
             continue
         chromSize = chromSize // resolution + 1
         chrom_diag = {}
-        for band in range(1, chromSize):
+        for band in range(1, chromSize - 4):
             if used_diags != "whole" and band not in used_diags:
                 continue
             mat = []
@@ -373,7 +373,7 @@ if __name__ == "__main__":
         pickle.dump(res, f)
     
     print("Writing out latent embeddings.")
-    outdir = args.outdir
+    
     if not os.path.exists(outdir + '/norm3DVI'):
         os.mkdir(outdir + '/norm3DVI')
     
