@@ -81,7 +81,7 @@ conda activate schic-3dvi
 
 ### 3. Running 3DVI
 
-    python3.7 3DVI.py -b 10 -c 'whole' -r 1000000 -i "Path/to/3DVI/demoData" -o "Path/to/3DVI/results" -cs "Path/to/3DVI/supplementaryData/demoData_summary.txt" -g "Path/to/3DVI/supplementaryData/hg19.chrom.sizes" -br -n 100 -gpu -p 10 -pca 50 -up -tp -v
+    python3.7 Path/to/3DVI/scripts/3DVI.py -b 10 -c "whole" -r 1000000 -i "Path/to/3DVI/demoData" -o "Path/to/3DVI/results" -cs "Path/to/3DVI/supplementaryData/demoData_summary.txt" -g "Path/to/3DVI/supplementaryData/hg19.chrom.sizes" -br -n 100 -gpu -p 10 -pca 50 -up -tp -v
 
 The above test run will take ~15min to finish.
 
@@ -90,14 +90,14 @@ The above test run will take ~15min to finish.
 Under output directory:
 
 - Path/to/3DVI/results
-    - latentEmbeddings/  
+    - latentEmbeddings/
       - norm3DVI_PCA50.txt
       - norm3DVI_latentEmbeddingFull.txt
     - norm3DVI/
       - normalized count saved as a tab-separated file for each input scHi-C data with the same file name. 
       - ...
     - figures/
-      - norm3DVI_TSNE.pdf  
+      - norm3DVI_TSNE.pdf
       - norm3DVI_UMAP.pdf
     
 ![UMAP Visualization](/figures/norm3DVI_UMAP.png)
@@ -157,7 +157,6 @@ chr4    191154276
 chr5    180915260
 chr6    171115067
 chr7    159138663
-chrX    155270560
 chr8    146364022
 chr9    141213431
 chr10   135534747
@@ -169,8 +168,33 @@ chr15   102531392
 chr16   90354753
 chr17   81195210
 chr18   78077248
-chr20   63025520
 chr19   59128983
-chr22   51304566
+chr20   63025520
 chr21   48129895
+chr22   51304566
+chrX    155270560
+```
+
+### 6. Using Slurm to accelerate 3DVI
+
+Submit the 3DVI run for each chromosome through ```sbatch```. Customize the sbatch command to your cluster server system.
+
+```
+chrom="chr1"
+bandMax=10
+resolution=1000000
+inPath="Path/to/3DVI/demoData"
+outPath="Path/to/3DVI/results"
+cellSummary="Path/to/3DVI/supplementaryData/demoData_summary.txt"
+genomeSize="Path/to/3DVI/supplementaryData/hg19.chrom.sizes"
+cpuN=1
+
+mkdir -p outLog
+sbatch --nodes=1 --ntasks=1 --cpus-per-task=${cpuN} --threads-per-core=1 --gres=gpu --mem=120G --tmp=256000 -J ${chrom}_${bandDist} --output=outLog/3DVI_${chrom}.out --export=chrom="${chrom}",bandMax="${bandMax}",resolution="${resolution}",inPath="${inPath}",outPath="${outPath}",cellSummary="${cellSummary}",genomeSize="${genomeSize}",cpuN="${cpuN}" run_3DVI.sh
+```
+
+In ```run_3DVI.sh```,
+
+```
+python3.7 Path/to/3DVI/scripts/3DVI.py -b "${bandMax}" -c "${chrom}" -r "${resolution}" -i "${inPath}" -o "${outPath}" -cs "${cellSummary}" -g "${genomeSize}" -br -n 100 -gpu -p "${cpuN}" -pca 50 -up -tp -v
 ```
