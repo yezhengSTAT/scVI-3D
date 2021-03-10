@@ -6,10 +6,10 @@ channels:
   - defaults
 dependencies:
   - python=3.7
-  - numpy=1.16.*
-  - scanpy=1.6.*
-  - pandas=1.0.*
+  - numpy=1.17.*
+  - scanpy=1.4.*
+  - pandas=0.25.*
   - anndata=0.7.*
   - scvi-tools=0.8.*
-  - joblib=1.0.*
-  - scikit-learn=0.24.*
+  - joblib=0.13.*
+  - scikit-learn=0.21.*

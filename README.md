@@ -21,17 +21,17 @@ Current version: 0.1
     git clone https://github.com/yezhengSTAT/3DVI
 
 3DVI installation is finished once you successsfully git clone the repository. We provide a demo scHi-C data, sampled 400 cells of Astro, ODC, MG, Sst, four cell types from [Ecker2019](https://www.nature.com/articles/s41592-019-0547-z) for test run.  The raw input data will be downloaded with this repository. In preparation for such run, you will need to have python (>=3.7) available on your server with corresponding modules required: 
-  - numpy (>= 1.13.1)
-  - scanpy (>= 1.6.0)
-  - pandas (>= 1.0.3)
-  - anndata (>= 0.7.4)
+  - numpy (>= 1.17.3)
+  - scanpy (>= 1.4.6)
+  - pandas (>= 0.25.3)
+  - anndata (>= 0.7.1)
   - [scvi-tools (>= 0.8.1)](https://docs.scvi-tools.org/en/stable/installation.html)
-  - joblib (>= 1.0.1)
-  - scikit-learn (>= 0.24.1)
+  - joblib (>= 0.13.2
+  - scikit-learn (>= 0.21.3)
   
 If you want to get the UMAP and t-SNE visualization, you will need two more modules installed:
-  - matplotlib (>=3.3.4)
-  - umap (0.1.1)
+  - matplotlib (>=3.1.1)
+  - umap (0.3.10)
 
 For quick python module installation, python-requirements.txt is provided in this repository. Run
 

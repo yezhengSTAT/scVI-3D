@@ -6,23 +6,22 @@
 
 
 ## Script to remove sequencing depth effect, batch effect and lower dimension project, denoising single-cell Hi-C data.
-## Feb 2021
+## March 2021
 
 import sys
+import os
+import glob
+import gc
+import argparse
+import pickle
+from tqdm import tqdm
 import scanpy as sc
 import numpy as np
 import pandas as pd
 import anndata
-import sys
-import os
-import glob
-from tqdm import tqdm
-# from multiprocessing import Pool
+import scvi
 from joblib import Parallel, delayed
-import gc
 from sklearn.decomposition import PCA
-import argparse
-import pickle
 
 def create_band_mat(x: np.array, count: np.array, diag: int, maxChromosomeSize: int) -> np.array:
     bandMat = np.zeros(maxChromosomeSize - diag)
@@ -74,7 +73,7 @@ class Process(object):
                 
         cell_band = {}
         for chromosome, chromosome_data in self.df.groupby(chrom):
-            if used_chroms != 'whole' and (chromosome not in self._chromSize or chromosome not in used_chroms):
+            if (used_chroms != 'whole' and chromosome not in used_chroms) or chromosome not in self._chromSize:
                 continue
             
             bandSize = self._chromSize[chromosome] // self._RESOLUTION + 1
@@ -139,36 +138,41 @@ def normalize(bandM, chromSelect, bandDist, nLatent = 100, batchFlag = False, gp
 
     #bandM = band_chrom_diag[chromSelect][bandDist] #pd.read_csv(args.infile, index_col = 0).round(0)
     cellSelect = [i for i, val in enumerate(bandM.sum(axis = 1)>0) if val]
-    bandDepth = bandM[cellSelect,].sum(axis = 1).mean()
-    adata = sc.AnnData(bandM)
-    
-    if(batchFlag is True):
-        adata.obs['batch'] = cellInfo['batch'].values
-    
-    sc.pp.filter_cells(adata, min_counts=1)
-
-    if(batchFlag is True):
-        scvi.data.setup_anndata(adata, batch_key = 'batch')
-    else:
-        scvi.data.setup_anndata(adata)
-    model = scvi.model.SCVI(adata, n_latent = nLatent, use_cuda = gpuFlag)
-    
-    model.train()
-
-    if(batchFlag is True):
-        imputeTmp = np.zeros((len(cellSelect), bandM.shape[1]))
-        for batchName in list(set(cellInfo['batch'].values)):
-            imputeTmp = imputeTmp + model.get_normalized_expression(library_size = bandDepth, transform_batch = batchName)
-        imputeM = imputeTmp/len(list(set(cellInfo['batch'].values)))
-
-    else:
-        imputeM = model.get_normalized_expression(library_size = bandDepth)
+    if len(cellSelect) == 0:
+        normCount = None
+        latentDF = pd.DataFrame(np.zeros((len(bandM), nLatent)), index = range(len(bandM)))
         
-    normCount = get_locuspair(imputeM, chromSelect, bandDist)
+    else:
+        bandDepth = bandM[cellSelect,].sum(axis = 1).mean()
+        adata = sc.AnnData(bandM)
+    
+        if(batchFlag is True):
+            adata.obs['batch'] = cellInfo['batch'].values
+    
+        sc.pp.filter_cells(adata, min_counts=1)
 
-    latent = model.get_latent_representation()
-    latentDF = pd.DataFrame(latent, index = cellSelect)
-    latentDF = latentDF.reindex([i for i in range(len(bandM))]).fillna(0)
+        if(batchFlag is True):
+            scvi.data.setup_anndata(adata, batch_key = 'batch')
+        else:
+            scvi.data.setup_anndata(adata)
+        model = scvi.model.SCVI(adata, n_latent = nLatent, use_cuda = gpuFlag)
+    
+        model.train()
+
+        if(batchFlag is True):
+            imputeTmp = np.zeros((len(cellSelect), bandM.shape[1]))
+            for batchName in list(set(cellInfo['batch'].values)):
+                imputeTmp = imputeTmp + model.get_normalized_expression(library_size = bandDepth, transform_batch = batchName)
+            imputeM = imputeTmp/len(list(set(cellInfo['batch'].values)))
+
+        else:
+            imputeM = model.get_normalized_expression(library_size = bandDepth)
+        
+        normCount = get_locuspair(imputeM, chromSelect, bandDist)
+
+        latent = model.get_latent_representation()
+        latentDF = pd.DataFrame(latent, index = cellSelect)
+        latentDF = latentDF.reindex([i for i in range(len(bandM))]).fillna(0)
 
     return(latentDF, normCount)
 
@@ -388,6 +392,8 @@ if __name__ == "__main__":
     
     print('Writing out normalization count.')
     for i in range(1, len(res)):
+        if res[i][1] is None:
+            continue
         for cellId, cellDf in res[i][1].groupby('cellID'):
             fname = outdir + '/norm3DVI/' + cells[int(cellId)].split('/')[-1]
             cellDf.drop(columns=['cellID']).to_csv(fname, sep='\t', header=False, index=False, mode='a')
@@ -426,7 +432,7 @@ if __name__ == "__main__":
         cbar = plt.colorbar(boundaries=np.arange(len(list(colorDict.keys()))+1) - 0.5)
         cbar.set_ticks(np.arange(len(list(colorDict.keys()))+2))
         cbar.set_ticklabels(list(colorDict.keys()))
-        plt.title('UMAP Projection of the scHi-C Demo Data', fontsize=15)
+        plt.title('UMAP Projection of the scHi-C Demo Data', fontsize=20)
         plt.savefig(outdir + '/figures/norm3DVI_UMAP.pdf')  
 
     if args.tsnePlot:
@@ -447,5 +453,5 @@ if __name__ == "__main__":
         cbar = plt.colorbar(boundaries=np.arange(len(list(colorDict.keys()))+1) - 0.5)
         cbar.set_ticks(np.arange(len(list(colorDict.keys()))+2))
         cbar.set_ticklabels(list(colorDict.keys()))
-        plt.title('t-SNE Projection of the scHi-C Demo Data', fontsize=15)
+        plt.title('t-SNE Projection of the scHi-C Demo Data', fontsize=20)
         plt.savefig(outdir + '/figures/norm3DVI_TSNE.pdf')  
