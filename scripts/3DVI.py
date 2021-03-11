@@ -134,7 +134,7 @@ def get_locuspair(imputeM, chromSelect, bandDist):
     return normCount
 
 
-def normalize(bandM, chromSelect, bandDist, nLatent = 100, batchFlag = False, gpuFlag = False):
+def normalize(bandM, cellInfo, chromSelect, bandDist, nLatent = 100, batchFlag = False, gpuFlag = False):
 
     #bandM = band_chrom_diag[chromSelect][bandDist] #pd.read_csv(args.infile, index_col = 0).round(0)
     cellSelect = [i for i, val in enumerate(bandM.sum(axis = 1)>0) if val]
@@ -363,8 +363,6 @@ if __name__ == "__main__":
 
 
     ## 3DVI
-    ## sys.path.insert(1, '/home/yzheng23/.conda/envs/scvi-env/lib/python3.7/site-packages/')
-    import scvi
 
     print("3DVI normalization.")
     bandMiter = [[bandM, chromSelect, bandDist] for chromSelect, band_diags in band_chrom_diag.items() for bandDist, bandM in band_diags.items()]
@@ -372,7 +370,7 @@ if __name__ == "__main__":
     batchFlag = args.batchRemoval
     gpuFlag = args.gpuFlag
 
-    res = Parallel(n_jobs=coreN,backend='multiprocessing')(delayed(normalize)(bandM, chromSelect, bandDist, nLatent, batchFlag, gpuFlag) for bandM, chromSelect, bandDist in bandMiter)
+    res = Parallel(n_jobs=coreN,backend='multiprocessing')(delayed(normalize)(bandM, cellInfo, chromSelect, bandDist, nLatent, batchFlag, gpuFlag) for bandM, chromSelect, bandDist in bandMiter)
     with open(outdir + '/pickle/res', 'wb') as f:
         pickle.dump(res, f)
     
