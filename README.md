@@ -21,12 +21,12 @@ Current version: 0.1
     git clone https://github.com/yezhengSTAT/3DVI
 
 3DVI installation is finished once you successsfully git clone the repository. We provide a demo scHi-C data, sampled 400 cells of Astro, ODC, MG, Sst, four cell types from [Ecker2019](https://www.nature.com/articles/s41592-019-0547-z) for test run.  The raw input data will be downloaded with this repository. In preparation for such run, you will need to have python (>=3.7) available on your server with corresponding modules required: 
-  - numpy (>= 1.17.3)
+  - numpy (>= 1.11.3)
   - scanpy (>= 1.4.6)
-  - pandas (>= 0.25.3)
+  - pandas (>= 0.21.0)
   - anndata (>= 0.7.1)
   - [scvi-tools (>= 0.8.1)](https://docs.scvi-tools.org/en/stable/installation.html)
-  - joblib (>= 0.13.2
+  - joblib (>= 0.13.2)
   - scikit-learn (>= 0.21.3)
   
 If you want to get the UMAP and t-SNE visualization, you will need two more modules installed:
@@ -54,6 +54,8 @@ conda env create -f 3DVI_conda_environment.yml
 ```
 conda activate schic-3dvi
 ```
+
+To deactivate conda enviorment, use ```conda deactivate```.
 
 ### 2. Setting parameters for 3DVI
 
@@ -83,7 +85,7 @@ conda activate schic-3dvi
 
     python3.7 Path/to/3DVI/scripts/3DVI.py -b 10 -c "whole" -r 1000000 -i "Path/to/3DVI/demoData" -o "Path/to/3DVI/results" -cs "Path/to/3DVI/supplementaryData/demoData_summary.txt" -g "Path/to/3DVI/supplementaryData/hg19.chrom.sizes" -br -n 100 -gpu -p 10 -pca 50 -up -tp -v
 
-The above test run will take ~15min to finish.
+The above test run utilizes gpu and will take ~15min to finish.
 
 ### 4. Output from 3DVI
 

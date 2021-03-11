@@ -5,11 +5,11 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - python=3.7
-  - numpy=1.17.*
-  - scanpy=1.4.*
-  - pandas=0.25.*
-  - anndata=0.7.*
-  - scvi-tools=0.8.*
-  - joblib=0.13.*
-  - scikit-learn=0.21.*
+  - python>=3.7.*,>=3.8.*
+  - numpy>=1.11.*,>=1.11.3
+  - scanpy>=1.4.*
+  - pandas>=0.21.0,>=0.23.0
+  - anndata>=0.7.*
+  - scvi-tools>=0.8.*
+  - joblib
+  - scikit-learn
