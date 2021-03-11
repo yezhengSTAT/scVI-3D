@@ -34,36 +34,32 @@ If you want to get the UMAP and t-SNE visualization, you will need two more modu
   - matplotlib (>=3.1.1)
   - umap (0.3.10)
 
-#### 1.1 Creating environment using ``````conda`````` (recommended):
+#### 1.1 Creating environment using ```conda``` (recommended):
 
 - 1. Install [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html).
 
  - 2. Build conda environment:
 
 ```
-```
 conda env create -f 3DVI_conda_environment.yml
 ```
-```
-```
+
 
  - 3. Active conda environment for 3DVI:
 
 ```
-```
 conda activate schic-3dvi
 ```
-```
-```
-To deactivate conda enviorment, use ``````conda deactivate``````.
 
-#### 1.2 Install through ``````pip``````:
+To deactivate conda enviorment, use ```conda deactivate```.
+
+#### 1.2 Install through ```pip```:
 
 For quick python module installation, python-requirements.txt is provided in this repository. Run
 
 ```
-``pip install -r python-requirements.txt
-`````````
+pip install -r python-requirements.txt
+```
 
 
 
@@ -124,7 +120,6 @@ Under output directory:
 
 Locus-pair interactions for each cell are saved into one tab-separated file with five columns and no header indicating locus pair A (chrA binA) interacting locus pair B (chrB binB) with count N.
 
-```
 ```
 chr1    0       chr1    1000000 9
 chr1    1000000 chr1    1000000 200
