@@ -363,14 +363,16 @@ if __name__ == "__main__":
 
 
     ## 3DVI
-
     print("3DVI normalization.")
     bandMiter = [[bandM, chromSelect, bandDist] for chromSelect, band_diags in band_chrom_diag.items() for bandDist, bandM in band_diags.items()]
     nLatent = int(args.nLatent) #int(args.nLatent)
     batchFlag = args.batchRemoval
     gpuFlag = args.gpuFlag
 
-    res = Parallel(n_jobs=coreN,backend='multiprocessing')(delayed(normalize)(bandM, cellInfo, chromSelect, bandDist, nLatent, batchFlag, gpuFlag) for bandM, chromSelect, bandDist in bandMiter)
+    if coreN == 1:
+        res = [normalize(bandM, cellInfo, chromSelect, bandDist, nLatent, batchFlag, gpuFlag) for bandM, chromSelect, bandDist in bandMiter]
+    else:
+        res = Parallel(n_jobs=coreN,backend='multiprocessing')(delayed(normalize)(bandM, cellInfo, chromSelect, bandDist, nLatent, batchFlag, gpuFlag) for bandM, chromSelect, bandDist in bandMiter)
     with open(outdir + '/pickle/res', 'wb') as f:
         pickle.dump(res, f)
     

@@ -33,15 +33,9 @@ If you want to get the UMAP and t-SNE visualization, you will need two more modu
   - matplotlib (>=3.1.1)
   - umap (0.3.10)
 
-For quick python module installation, python-requirements.txt is provided in this repository. Run
+Creating environment using ```conda``` (recommended):
 
-```
-pip install -r python-requirements.txt
-```
-
-#### 1.1 [Alternative] Creating environment using conda.
-
- - 1. Install [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html).
+- 1. Install [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html).
 
  - 2. Build conda environment:
 
@@ -56,6 +50,18 @@ conda activate schic-3dvi
 ```
 
 To deactivate conda enviorment, use ```conda deactivate```.
+
+Install through ```pip```:
+
+For quick python module installation, python-requirements.txt is provided in this repository. Run
+
+```
+```
+pip install -r python-requirements.txt
+``````
+
+
+
 
 ### 2. Setting parameters for 3DVI
 
