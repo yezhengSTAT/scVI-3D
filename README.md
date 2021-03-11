@@ -18,8 +18,9 @@ Current version: 0.1
 
 ### 1. Preparation
 
-    git clone https://github.com/yezhengSTAT/3DVI
-
+```
+git clone https://github.com/yezhengSTAT/3DVI
+```
 3DVI installation is finished once you successsfully git clone the repository. We provide a demo scHi-C data, sampled 400 cells of Astro, ODC, MG, Sst, four cell types from [Ecker2019](https://www.nature.com/articles/s41592-019-0547-z) for test run.  The raw input data will be downloaded with this repository. In preparation for such run, you will need to have python (>=3.7) available on your server with corresponding modules required: 
   - numpy (>= 1.11.3)
   - scanpy (>= 1.4.6)
@@ -33,33 +34,36 @@ If you want to get the UMAP and t-SNE visualization, you will need two more modu
   - matplotlib (>=3.1.1)
   - umap (0.3.10)
 
-Creating environment using ```conda``` (recommended):
+#### 1.1 Creating environment using ``````conda`````` (recommended):
 
 - 1. Install [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html).
 
  - 2. Build conda environment:
 
 ```
+```
 conda env create -f 3DVI_conda_environment.yml
+```
+```
 ```
 
  - 3. Active conda environment for 3DVI:
 
 ```
+```
 conda activate schic-3dvi
 ```
+```
+```
+To deactivate conda enviorment, use ``````conda deactivate``````.
 
-To deactivate conda enviorment, use ```conda deactivate```.
-
-Install through ```pip```:
+#### 1.2 Install through ``````pip``````:
 
 For quick python module installation, python-requirements.txt is provided in this repository. Run
 
 ```
-```
-pip install -r python-requirements.txt
-``````
-
+``pip install -r python-requirements.txt
+`````````
 
 
 
@@ -89,7 +93,9 @@ pip install -r python-requirements.txt
 
 ### 3. Running 3DVI
 
-    python3.7 Path/to/3DVI/scripts/3DVI.py -b 10 -c "whole" -r 1000000 -i "Path/to/3DVI/demoData" -o "Path/to/3DVI/results" -cs "Path/to/3DVI/supplementaryData/demoData_summary.txt" -g "Path/to/3DVI/supplementaryData/hg19.chrom.sizes" -br -n 100 -gpu -p 10 -pca 50 -up -tp -v
+```
+python3.7 Path/to/3DVI/scripts/3DVI.py -b 10 -c "whole" -r 1000000 -i "Path/to/3DVI/demoData" -o "Path/to/3DVI/results" -cs "Path/to/3DVI/supplementaryData/demoData_summary.txt" -g "Path/to/3DVI/supplementaryData/hg19.chrom.sizes" -br -n 100 -gpu -p 10 -pca 50 -up -tp -v
+```
 
 The above test run utilizes gpu and will take ~15min to finish.
 
@@ -119,6 +125,7 @@ Under output directory:
 Locus-pair interactions for each cell are saved into one tab-separated file with five columns and no header indicating locus pair A (chrA binA) interacting locus pair B (chrB binB) with count N.
 
 ```
+```
 chr1    0       chr1    1000000 9
 chr1    1000000 chr1    1000000 200
 chr1    0       chr1    2000000 2
@@ -134,6 +141,7 @@ chr1    2000000 chr1    4000000 2
 ### 5.2 Cell summary file (tab separated file and this file is optional depending on the removal batch effect or not)
 
 Cell summary file provides all the cell interactin file name including the extension so that we can locate the input file using the ```inPath``` parameter and the cell file name listed in column ```name```. If batch effect need to be removed, please provide the batch related information in column ```batch```. For UMAP or t-SNE visualization where cell is colored by label, please provide the cluster or cell type label in column ```cell_type```. If no batch bias removal or visualization figure generation is needed, this file can be not provided to the run. Column names need to be exactly set to ```name```, ```batch``` and ```cell_type```.
+
 
 ```
 name    batch   cell_type       
