@@ -1,6 +1,6 @@
 # 3DVI: Normalization and De-noising of Single-cell Hi-C Data
 
-Ye Zheng\*, Siqi Shen\* and Sündüz Keleş. Normalization and De-noising of Single-cell Hi-C Data with BandNorm and 3DVI. bioRxiv (2021). * contribute equally.
+[Ye Zheng\*, Siqi Shen\* and Sündüz Keleş. Normalization and De-noising of Single-cell Hi-C Data with BandNorm and 3DVI. bioRxiv (2021). * contribute equally.](https://www.biorxiv.org/content/10.1101/2021.03.10.434870v1)
 
 
 ## What is 3DVI?
