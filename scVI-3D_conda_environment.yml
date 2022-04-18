@@ -1,4 +1,4 @@
-name: schic-3dvi
+name: schic-scvi-3d
 channels:
   - anaconda
   - conda-forge

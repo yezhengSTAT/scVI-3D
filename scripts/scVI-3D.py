@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-## 3DVI
+## scVI-3D
 ## Author: Ye Zheng
 ## Contact: yezheng.stat@gmail.com
 
 
 ## Script to remove sequencing depth effect, batch effect and lower dimension project, denoising single-cell Hi-C data.
-## March 2021
+## APRIL 2022
 
 import sys
 import os
@@ -182,15 +182,33 @@ def get_args():
     '''Get arguments'''
     parser = argparse.ArgumentParser(description = '------------Usage Start------------',
                                      epilog = '------------Usage End------------')
+    # parser.add_argument('-b', '--bandMax', help = 'Maximum genomic distance to be processed, e.g. 10. Use "whole" to include all the band matrix for each chromosome. Default is "whole".', default = 'whole')
+    # parser.add_argument('-c', '--chromList', help = 'List of chromosome to be processed separate by comma, e.g. "chr1,chr2,chrX". Use "whole" to include all chromosomes in the cell summary file (args.cellSummary). Default is "whole".', default = 'whole')
+    # parser.add_argument('-r', '--resolution', help = 'Resolution of scHi-C data, e.g., 1000000.', default = None)
+    # parser.add_argument('-i', '--inPath', help = 'Path to the folder where input scHi-C data are saved.', default = None)
+    # parser.add_argument('-o', '--outdir', help = 'Path to output directory.', default = None)
+    # parser.add_argument('-cs', '--cellSummary', help = '(Optional) Cell summary file with columns names to be "name" for scHi-C data file name including extension, "batch" for batch factor, "cell_type" for cluster or cell type label (tab separated file).', default = None)
+    # parser.add_argument('-g', '--genome', help = 'Path to genome size file (tab separated file).', default = None)
+    # parser.add_argument('-br', '--batchRemoval', help = 'Indicator to remove batch or not. Default is False.', action='store_true')
+    # parser.add_argument('-n', '--nLatent', help = 'Dimension of latent space. Default is 100.', default = 100)
+    # parser.add_argument('-gpu', '--gpuFlag', help = '(Optional) Use GPU or not. Default is False.', action='store_true')
+    # parser.add_argument('-p', '--parallelCPU', help = '(Optional) Number of CPUs to be used for parallel running. Default is 1 and no parallel computing is used.', default = 1)
+    # parser.add_argument('-pca', '--pcaNum', help = '(Optional) Number of principal components to be writen out. Default is 50.', default = 50)
+    # parser.add_argument('-up', '--umapPlot', help = '(Optional) Plot UMAP of latent embeddings. Default is False.', action='store_true')
+    # parser.add_argument('-tp', '--tsnePlot', help = '(Optional) Plot t-SNE of latent embeddings. Default is False.', action='store_true')
+    # parser.add_argument('-v', '--verbose', help = '(Optional) Verbose. Default is False.', action='store_true')
     parser.add_argument('-b', '--bandMax', help = 'Maximum genomic distance to be processed, e.g. 10. Use "whole" to include all the band matrix for each chromosome. Default is "whole".', default = 'whole')
     parser.add_argument('-c', '--chromList', help = 'List of chromosome to be processed separate by comma, e.g. "chr1,chr2,chrX". Use "whole" to include all chromosomes in the cell summary file (args.cellSummary). Default is "whole".', default = 'whole')
     parser.add_argument('-r', '--resolution', help = 'Resolution of scHi-C data, e.g., 1000000.', default = None)
+    parser.add_argument('-br', '--batchRemoval', help = 'Indicator to remove batch or not. Default is False.', action='store_true')
+    parser.add_argument('-n', '--nLatent', help = 'Dimension of latent space. Default is 100.', default = 100)
+    parser.add_argument('-diag', '--includeDiag', help = 'Include diagonal in the normalization and imputation process. Default is not include.', action='store_true')
+    parser.add_argument('-pool', '--poolStrategy', help = 'Pooling strategy: 1, 2, 3, 4, 5.', default = 1)
     parser.add_argument('-i', '--inPath', help = 'Path to the folder where input scHi-C data are saved.', default = None)
     parser.add_argument('-o', '--outdir', help = 'Path to output directory.', default = None)
     parser.add_argument('-cs', '--cellSummary', help = '(Optional) Cell summary file with columns names to be "name" for scHi-C data file name including extension, "batch" for batch factor, "cell_type" for cluster or cell type label (tab separated file).', default = None)
     parser.add_argument('-g', '--genome', help = 'Path to genome size file (tab separated file).', default = None)
-    parser.add_argument('-br', '--batchRemoval', help = 'Indicator to remove batch or not. Default is False.', action='store_true')
-    parser.add_argument('-n', '--nLatent', help = 'Dimension of latent space. Default is 100.', default = 100)
+    parser.add_argument('-s', '--save', help = '(Optional) Save intermediate data in pickle format.', action = 'store_true')
     parser.add_argument('-gpu', '--gpuFlag', help = '(Optional) Use GPU or not. Default is False.', action='store_true')
     parser.add_argument('-p', '--parallelCPU', help = '(Optional) Number of CPUs to be used for parallel running. Default is 1 and no parallel computing is used.', default = 1)
     parser.add_argument('-pca', '--pcaNum', help = '(Optional) Number of principal components to be writen out. Default is 50.', default = 50)
@@ -244,6 +262,10 @@ def get_args():
         parser.print_help()
         sys.exit()
         
+    if int(args.poolStrategy) not in [1, 2, 3, 4, 5, 6, 7]:
+        print("Please select one pooling strategy from 1, 2, 3, 4, 5. Default is 1.")
+        parser.print_help()
+        sys.exit()
     
     if int(args.parallelCPU) == -1:
         print("All the CPUs will be used.")
@@ -268,12 +290,15 @@ if __name__ == "__main__":
         print('Maximum genomic distance:', args.bandMax)
         print('Chromosomes to be processed:', args.chromList)
         print('Resolution:', args.resolution)
+        print('Remove batch effect or not:', args.batchRemoval)
+        print('Dimension of latent space:', args.nLatent)
+        print('Include diagonal:', args.includeDiag)
+        print('Pooling strategy:', args.poolStrategy)
         print('Path to the input scHi-C data:', args.inPath)
         print('Path to output directory:', args.outdir)
         print('Cell summary file:', args.cellSummary)
         print('Genome size file:', args.genome)
-        print('Remove batch effect or not:', args.batchRemoval)
-        print('Dimension of latent space:', args.nLatent)
+        print('Save intermediate data:', args.save)
         print('Use GPU or not:', args.gpuFlag)
         print('Number of CPUs for parallel computing:', args.parallelCPU)
         print('PCA number:', args.pcaNum)
@@ -282,6 +307,11 @@ if __name__ == "__main__":
    
     
     outdir = args.outdir
+    saveFlag = args.save
+    if saveFlag:
+        if not os.path.exists(outdir + '/pickle'):
+            os.mkdir(outdir + '/pickle')
+
     ## number of bin per chromosome
     print("Caculate total number of bin per chromosome.")
     binSize = pd.read_csv(args.genome, sep = "\t", header = None)
@@ -297,9 +327,11 @@ if __name__ == "__main__":
     print("Prepare cell summary file.")
     if args.cellSummary is not None:
         cellInfo = pd.read_csv(args.cellSummary, sep = "\t", header = 0).sort_values(by = 'name')
+        pd.DataFrame(cellInfo).to_csv(outdir + '/cell_info_summary_sorted.txt', sep = '\t', header = False, index = False)
     else:
         cellName = {'name': os.listdir(args.inPath)}
         cellInfo = pd.DataFrame(cellName).sort_values(by = 'name')
+        pd.DataFrame(cellInfo).to_csv(outdir + '/cell_info_summary_sorted.txt', sep = '\t', header = False, index = False)
 
     cellInfo.index = range(cellInfo.shape[0])
     
@@ -324,14 +356,19 @@ if __name__ == "__main__":
     raws = read_files(files, used_chroms, coreN)
     
     print("Convert interactions into band matrix.")
-    raw_cells = Parallel(n_jobs=coreN)(delayed(process_cell)(cell_df, binSizeDict, resolution, cell, used_chroms, used_diags) for cell, cell_df in tqdm(raws.groupby('cell')))
+    # raw_cells = Parallel(n_jobs=coreN)(delayed(process_cell)(cell_df, binSizeDict, resolution, cell, used_chroms, used_diags) for cell, cell_df in tqdm(raws.groupby('cell')))
+    if coreN == 1:
+        raw_cells = [process_cell(cell_df, binSizeDict, resolution, cell, used_chroms, used_diags) for cell, cell_df in raws.groupby('cell')]
+    else:
+        raw_cells = Parallel(n_jobs=coreN)(delayed(process_cell)(cell_df, binSizeDict, resolution, cell, used_chroms, used_diags) for cell, cell_df in tqdm(raws.groupby('cell')))
+
     raw_cells.sort(key=lambda x: x[1]) ##x[1] is 'cell', used for sorting
     cells = [cell for _, cell in raw_cells]
     raw_cells = [raw_cell for raw_cell, _ in raw_cells]
-    if not os.path.exists(outdir + '/pickle'):
-        os.mkdir(outdir + '/pickle')
-    with open(outdir + '/pickle/raw_cells', 'wb') as f:
-        pickle.dump(raw_cells, f)
+    if saveFlag:
+        with open(outdir + '/pickle/raw_cells', 'wb') as f:
+            pickle.dump(raw_cells, f)
+
     # del raws
     # gc.collect()
     
@@ -342,7 +379,7 @@ if __name__ == "__main__":
             continue
         chromSize = chromSize // resolution + 1
         chrom_diag = {}
-        for band in range(1, chromSize - 4):
+        for band in range(1, chromSize):
             if used_diags != "whole" and band not in used_diags:
                 continue
             mat = []
@@ -355,15 +392,274 @@ if __name__ == "__main__":
             chrom_diag[band] = np.vstack(mat)
         band_chrom_diag[chrom] = chrom_diag
     
-    with open(outdir + '/pickle/band_chrom_diag', 'wb') as f:
-        pickle.dump(band_chrom_diag, f)
+    if saveFlag:
+        with open(outdir + '/pickle/band_chrom_diag', 'wb') as f:
+            pickle.dump(band_chrom_diag, f)
     
     # del raw_cells
     # gc.collect()
 
+    ## pooling strategy 1
+    
+    if int(args.poolStrategy) == 1: ## 1, 1+2, 3+4+5, 6+7+8+9, ...
+        print("Progressive Pooling Strategy 1 (Default).")
+        chrom_band_pool = {}
 
-    ## 3DVI
-    print("3DVI normalization.")
+        for chrom, chromSize in binSizeDict.items():
+            if used_chroms != "whole" and chrom not in used_chroms:
+                continue
+            chromSize = chromSize // resolution + 1
+            chrom_band_pool[chrom] = {}
+            chrom_ind = 1
+            increase_unit = 0
+            pool_ind = 1
+            if used_diags == "whole":
+                chromMax = chromSize
+            else:
+                chromMax = max(used_diags)
+            
+            while chrom_ind < chromMax:
+                start_ind = chrom_ind 
+                end_ind = min(chromMax, chrom_ind + increase_unit + 1)
+                if (chrom_ind + increase_unit + 1 > chromMax) and (end_ind - start_ind < 10):
+                    chrom_ind = chrom_ind + increase_unit + 1
+                    increase_unit = increase_unit + 1
+                    pool_ind = pool_ind + 1
+                else:    
+                    chrom_band_pool[chrom][pool_ind] = np.arange(start_ind, end_ind)
+                    chrom_ind = chrom_ind + increase_unit + 1
+                    increase_unit = increase_unit + 1
+                    pool_ind = pool_ind + 1
+
+    if int(args.poolStrategy) == 2: ## save 1-10 individually, 11+12, 13+14+15, ...
+        print("Progressive Pooling Strategy 2.")
+        chrom_band_pool = {}
+
+        for chrom, chromSize in binSizeDict.items():
+            if used_chroms != "whole" and chrom not in used_chroms:
+                continue
+            chromSize = chromSize // resolution + 1
+            chrom_band_pool[chrom] = {}
+            ## First 10 band on its own
+            for i in np.arange(1, 11):
+                chrom_band_pool[chrom][i] = [i]
+            ## Start merging band from 11st band
+            chrom_ind = 11
+            increase_unit = 1
+            pool_ind = 11
+            if used_diags == "whole":
+                chromMax = chromSize
+            else:
+                chromMax = max(used_diags)
+            
+            while chrom_ind < chromMax:
+                start_ind = chrom_ind 
+                end_ind = min(chromMax, chrom_ind + increase_unit + 1)
+                if (chrom_ind + increase_unit + 1 > chromMax) and (end_ind - start_ind < 10):
+                    chrom_ind = chrom_ind + increase_unit + 1
+                    increase_unit = increase_unit + 1
+                    pool_ind = pool_ind + 1
+                else:    
+                    chrom_band_pool[chrom][pool_ind] = np.arange(start_ind, end_ind)
+                    chrom_ind = chrom_ind + increase_unit + 1
+                    increase_unit = increase_unit + 1
+                    pool_ind = pool_ind + 1
+
+    if int(args.poolStrategy) == 3: ## merge 1-5, 6-10, 11-20, 21-40, 41-70, ...
+        print("Progressive Pooling Strategy 3.")
+        chrom_band_pool = {}
+
+        for chrom, chromSize in binSizeDict.items():
+            if used_chroms != "whole" and chrom not in used_chroms:
+                continue
+            chromSize = chromSize // resolution + 1
+            chrom_band_pool[chrom] = {}
+            ## Merge first 10 bands 
+            chrom_band_pool[chrom][1] = [1, 2, 3, 4, 5]
+            chrom_band_pool[chrom][2] = [6, 7, 8, 9, 10]
+            
+            ## Start merging band from 11st band
+            chrom_ind = 11
+            increase_unit = 10
+            pool_ind = 3
+            if used_diags == "whole":
+                chromMax = chromSize
+            else:
+                chromMax = max(used_diags)
+            
+            while chrom_ind < chromMax:
+                start_ind = chrom_ind 
+                end_ind = min(chromMax, chrom_ind + increase_unit + 1)
+                if (chrom_ind + increase_unit + 1 > chromMax) and (end_ind - start_ind < 10):
+                    chrom_ind = chrom_ind + increase_unit + 1
+                    increase_unit = increase_unit + 10
+                    pool_ind = pool_ind + 1
+                else:    
+                    chrom_band_pool[chrom][pool_ind] = np.arange(start_ind, end_ind)
+                    chrom_ind = chrom_ind + increase_unit + 1
+                    increase_unit = increase_unit + 10
+                    pool_ind = pool_ind + 1
+
+    if int(args.poolStrategy) == 4: ## 20 bands per unit
+        print("Progressive Pooling Strategy 4.")
+        chrom_band_pool = {}
+
+        for chrom, chromSize in binSizeDict.items():
+            if used_chroms != "whole" and chrom not in used_chroms:
+                continue
+            chromSize = chromSize // resolution + 1
+            chrom_band_pool[chrom] = {}
+            
+            ## Start merging band from 11st band
+            chrom_ind = 1
+            increase_unit = 20
+            pool_ind = 1
+            if used_diags == "whole":
+                chromMax = chromSize
+            else:
+                chromMax = max(used_diags)
+            
+            while chrom_ind < chromMax:
+                start_ind = chrom_ind 
+                end_ind = min(chromMax, chrom_ind + increase_unit + 1)
+                if (chrom_ind + increase_unit + 1 > chromMax) and (end_ind - start_ind < 10):
+                    chrom_ind = chrom_ind + increase_unit + 1
+                    ## increase_unit = increase_unit + 1
+                    pool_ind = pool_ind + 1
+                else:    
+                    chrom_band_pool[chrom][pool_ind] = np.arange(start_ind, end_ind)
+                    chrom_ind = chrom_ind + increase_unit + 1
+                    ## increase_unit = increase_unit + 1
+                    pool_ind = pool_ind + 1
+
+    if int(args.poolStrategy) == 5: ## 1-10, and 20 bands per unit after
+        print("Progressive Pooling Strategy 5.")
+        chrom_band_pool = {}
+
+        for chrom, chromSize in binSizeDict.items():
+            if used_chroms != "whole" and chrom not in used_chroms:
+                continue
+            chromSize = chromSize // resolution + 1
+            chrom_band_pool[chrom] = {}
+            ## First 10 band merged
+            chrom_band_pool[chrom][1] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+            ## Start merging band from 11st band
+            chrom_ind = 11
+            increase_unit = 20
+            pool_ind = 2
+            if used_diags == "whole":
+                chromMax = chromSize
+            else:
+                chromMax = max(used_diags)
+            
+            while chrom_ind < chromMax:
+                start_ind = chrom_ind 
+                end_ind = min(chromMax, chrom_ind + increase_unit + 1)
+                if (chrom_ind + increase_unit + 1 > chromMax) and (end_ind - start_ind < 10):
+                    chrom_ind = chrom_ind + increase_unit + 1
+                    ## increase_unit = increase_unit + 1
+                    pool_ind = pool_ind + 1
+                else:    
+                    chrom_band_pool[chrom][pool_ind] = np.arange(start_ind, end_ind)
+                    chrom_ind = chrom_ind + increase_unit + 1
+                    ## increase_unit = increase_unit + 1
+                    pool_ind = pool_ind + 1
+
+    if int(args.poolStrategy) == 6: ## 1, 2+3, 4+5+6, 7+8+9+10, 11-20, 21-40, ...
+        print("Progressive Pooling Strategy 6.")
+        chrom_band_pool = {}
+
+        for chrom, chromSize in binSizeDict.items():
+            if used_chroms != "whole" and chrom not in used_chroms:
+                continue
+            chromSize = chromSize // resolution + 1
+            chrom_band_pool[chrom] = {}
+            ## First 10 band merged
+            chrom_band_pool[chrom][1] = [1]
+            chrom_band_pool[chrom][2] = [2, 3]
+            chrom_band_pool[chrom][3] = [4, 5, 6]
+            chrom_band_pool[chrom][4] = [7, 8, 9, 10]
+            ## Start merging band from 11st band
+            chrom_ind = 11
+            increase_unit = 10
+            pool_ind = 5
+            if used_diags == "whole":
+                chromMax = chromSize
+            else:
+                chromMax = max(used_diags)
+            
+            while chrom_ind < chromMax:
+                start_ind = chrom_ind 
+                end_ind = min(chromMax, chrom_ind + increase_unit + 1)
+                if (chrom_ind + increase_unit + 1 > chromMax) and (end_ind - start_ind < 10):
+                    chrom_ind = chrom_ind + increase_unit + 1
+                    increase_unit = increase_unit + 10
+                    pool_ind = pool_ind + 1
+                else:    
+                    chrom_band_pool[chrom][pool_ind] = np.arange(start_ind, end_ind)
+                    chrom_ind = chrom_ind + increase_unit + 1
+                    increase_unit = increase_unit + 10
+                    pool_ind = pool_ind + 1
+
+    if int(args.poolStrategy) == 7: ## similar to strategy 1 but multiple by 10
+        print("Progressive Pooling Strategy 7.") ## similar to strategy 1 but enlarge by 10 times
+        chrom_band_pool = {}
+
+        for chrom, chromSize in binSizeDict.items():
+            if used_chroms != "whole" and chrom not in used_chroms:
+                continue
+            chromSize = chromSize // resolution + 1
+            chrom_band_pool[chrom] = {}
+            
+            ## Start merging band from 1st band
+            chrom_ind = 1
+            increase_unit = 10
+            pool_ind = 1
+            if used_diags == "whole":
+                chromMax = chromSize
+            else:
+                chromMax = max(used_diags)
+            
+            while chrom_ind < chromMax:
+                start_ind = chrom_ind 
+                end_ind = min(chromMax, chrom_ind + increase_unit + 1)
+                if (chrom_ind + increase_unit + 1 > chromMax) and (end_ind - start_ind < 10):
+                    chrom_ind = chrom_ind + increase_unit + 1
+                    increase_unit = increase_unit + 10
+                    pool_ind = pool_ind + 1
+                else:    
+                    chrom_band_pool[chrom][pool_ind] = np.arange(start_ind, end_ind)
+                    chrom_ind = chrom_ind + increase_unit + 1
+                    increase_unit = increase_unit + 10
+                    pool_ind = pool_ind + 1
+                    
+    print("Start pooling cell x locus-pair matrix.")
+    band_chrom_diag_pool = {}
+    for chrom, chromSize in binSizeDict.items():
+        if used_chroms != "whole" and chrom not in used_chroms:
+            continue
+        chromSize = chromSize // resolution + 1
+        band_chrom_diag_pool[chrom] = {}
+        for pool_ind in chrom_band_pool[chrom].keys():
+            print(pool_ind)
+            init = True
+            for band_ind in chrom_band_pool[chrom][pool_ind]:
+                if used_diags != "whole" and band_ind not in used_diags:
+                    continue
+                if(init == True):
+                    init = False
+                    band_chrom_diag_pool[chrom][pool_ind] = band_chrom_diag[chrom][band_ind]
+                else:
+                    band_chrom_diag_pool[chrom][pool_ind] = np.hstack((band_chrom_diag_pool[chrom][pool_ind], band_chrom_diag[chrom][band_ind]))
+            if pool_ind in band_chrom_diag_pool[chrom].keys():
+                print(band_chrom_diag_pool[chrom][pool_ind].shape)
+
+    if saveFlag:
+        with open(outdir + '/pickle/band_chrom_diag_pool', 'wb') as f:
+            pickle.dump(band_chrom_diag_pool, f)
+
+    ## scVI-3D
+    print("scVI-3D normalization.")
     bandMiter = [[bandM, chromSelect, bandDist] for chromSelect, band_diags in band_chrom_diag.items() for bandDist, bandM in band_diags.items()]
     nLatent = int(args.nLatent) #int(args.nLatent)
     batchFlag = args.batchRemoval
@@ -373,19 +669,20 @@ if __name__ == "__main__":
         res = [normalize(bandM, cellInfo, chromSelect, bandDist, nLatent, batchFlag, gpuFlag) for bandM, chromSelect, bandDist in bandMiter]
     else:
         res = Parallel(n_jobs=coreN,backend='multiprocessing')(delayed(normalize)(bandM, cellInfo, chromSelect, bandDist, nLatent, batchFlag, gpuFlag) for bandM, chromSelect, bandDist in bandMiter)
-    with open(outdir + '/pickle/res', 'wb') as f:
-        pickle.dump(res, f)
+    if saveFlag:
+        with open(outdir + '/pickle/res', 'wb') as f:
+            pickle.dump(res, f)
     
     print("Writing out latent embeddings.")
     
-    if not os.path.exists(outdir + '/norm3DVI'):
-        os.mkdir(outdir + '/norm3DVI')
+    if not os.path.exists(outdir + '/scVI-3D_norm'):
+        os.mkdir(outdir + '/scVI-3D_norm')
     
 
     ## remove existing files
     i = 0
     for cellId, cellDf in res[i][1].groupby('cellID'):
-            fname = outdir + '/norm3DVI/' + cells[int(cellId)].split('/')[-1]
+            fname = outdir + '/scVI-3D_norm/' + cells[int(cellId)].split('/')[-1]
             if os.path.exists(fname):
                 os.remove(fname)
             cellDf.drop(columns=['cellID']).to_csv(fname, sep='\t', header=False, index=False, mode='a')
@@ -395,19 +692,20 @@ if __name__ == "__main__":
         if res[i][1] is None:
             continue
         for cellId, cellDf in res[i][1].groupby('cellID'):
-            fname = outdir + '/norm3DVI/' + cells[int(cellId)].split('/')[-1]
+            fname = outdir + '/scVI-3D_norm/' + cells[int(cellId)].split('/')[-1]
             cellDf.drop(columns=['cellID']).to_csv(fname, sep='\t', header=False, index=False, mode='a')
     
     ## concatenate latent embeddings across band matrices
     latentList = [res[i][0] for i in range(len(res))]
     latentM = pd.concat(latentList, axis = 1)
-    pca = PCA(n_components = int(args.pcaNum))
-    latentPCA = pca.fit_transform(latentM)
-    
     if not os.path.exists(outdir + '/latentEmbeddings'):
         os.mkdir(outdir + '/latentEmbeddings')
-    pd.DataFrame(latentPCA).to_csv(outdir + '/latentEmbeddings/norm3DVI_PCA' + str(args.pcaNum) + '.txt', sep = '\t', header = False, index = False)
-    pd.DataFrame(latentM).to_csv(outdir + '/latentEmbeddings/norm3DVI_latentEmbeddingFull.txt', sep = '\t', header = False, index = False)
+    pd.DataFrame(latentM).to_csv(outdir + '/latentEmbeddings/scVI-3D_norm_latentEmbeddingFull.txt', sep = '\t', header = False, index = False)
+    
+    ## obtain the PCA latent embeddings as well
+    pca = PCA(n_components = int(args.pcaNum))
+    latentPCA = pca.fit_transform(latentM)
+    pd.DataFrame(latentPCA).to_csv(outdir + '/latentEmbeddings/scVI-3D_norm_PCA' + str(args.pcaNum) + '.txt', sep = '\t', header = False, index = False)
     
     
     ## Visualization
@@ -433,7 +731,7 @@ if __name__ == "__main__":
         cbar.set_ticks(np.arange(len(list(colorDict.keys()))+2))
         cbar.set_ticklabels(list(colorDict.keys()))
         plt.title('UMAP Projection of the scHi-C Demo Data', fontsize=20)
-        plt.savefig(outdir + '/figures/norm3DVI_UMAP.pdf')  
+        plt.savefig(outdir + '/figures/scVI-3D_norm_UMAP.pdf')  
 
     if args.tsnePlot:
         print("t-SNE visualization.")
@@ -454,4 +752,4 @@ if __name__ == "__main__":
         cbar.set_ticks(np.arange(len(list(colorDict.keys()))+2))
         cbar.set_ticklabels(list(colorDict.keys()))
         plt.title('t-SNE Projection of the scHi-C Demo Data', fontsize=20)
-        plt.savefig(outdir + '/figures/norm3DVI_TSNE.pdf')  
+        plt.savefig(outdir + '/figures/scVI-3D_norm_TSNE.pdf')  
