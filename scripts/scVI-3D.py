@@ -182,21 +182,6 @@ def get_args():
     '''Get arguments'''
     parser = argparse.ArgumentParser(description = '------------Usage Start------------',
                                      epilog = '------------Usage End------------')
-    # parser.add_argument('-b', '--bandMax', help = 'Maximum genomic distance to be processed, e.g. 10. Use "whole" to include all the band matrix for each chromosome. Default is "whole".', default = 'whole')
-    # parser.add_argument('-c', '--chromList', help = 'List of chromosome to be processed separate by comma, e.g. "chr1,chr2,chrX". Use "whole" to include all chromosomes in the cell summary file (args.cellSummary). Default is "whole".', default = 'whole')
-    # parser.add_argument('-r', '--resolution', help = 'Resolution of scHi-C data, e.g., 1000000.', default = None)
-    # parser.add_argument('-i', '--inPath', help = 'Path to the folder where input scHi-C data are saved.', default = None)
-    # parser.add_argument('-o', '--outdir', help = 'Path to output directory.', default = None)
-    # parser.add_argument('-cs', '--cellSummary', help = '(Optional) Cell summary file with columns names to be "name" for scHi-C data file name including extension, "batch" for batch factor, "cell_type" for cluster or cell type label (tab separated file).', default = None)
-    # parser.add_argument('-g', '--genome', help = 'Path to genome size file (tab separated file).', default = None)
-    # parser.add_argument('-br', '--batchRemoval', help = 'Indicator to remove batch or not. Default is False.', action='store_true')
-    # parser.add_argument('-n', '--nLatent', help = 'Dimension of latent space. Default is 100.', default = 100)
-    # parser.add_argument('-gpu', '--gpuFlag', help = '(Optional) Use GPU or not. Default is False.', action='store_true')
-    # parser.add_argument('-p', '--parallelCPU', help = '(Optional) Number of CPUs to be used for parallel running. Default is 1 and no parallel computing is used.', default = 1)
-    # parser.add_argument('-pca', '--pcaNum', help = '(Optional) Number of principal components to be writen out. Default is 50.', default = 50)
-    # parser.add_argument('-up', '--umapPlot', help = '(Optional) Plot UMAP of latent embeddings. Default is False.', action='store_true')
-    # parser.add_argument('-tp', '--tsnePlot', help = '(Optional) Plot t-SNE of latent embeddings. Default is False.', action='store_true')
-    # parser.add_argument('-v', '--verbose', help = '(Optional) Verbose. Default is False.', action='store_true')
     parser.add_argument('-b', '--bandMax', help = 'Maximum genomic distance to be processed, e.g. 10. Use "whole" to include all the band matrix for each chromosome. Default is "whole".', default = 'whole')
     parser.add_argument('-c', '--chromList', help = 'List of chromosome to be processed separate by comma, e.g. "chr1,chr2,chrX". Use "whole" to include all chromosomes in the cell summary file (args.cellSummary). Default is "whole".', default = 'whole')
     parser.add_argument('-r', '--resolution', help = 'Resolution of scHi-C data, e.g., 1000000.', default = None)
@@ -346,7 +331,10 @@ if __name__ == "__main__":
     if args.bandMax == "whole":
         used_diags = "whole"
     else:
-        used_diags = [i for i in range(1, int(args.bandMax) + 1)]
+        if args.includeDiag:
+            used_diags = [i for i in range(0, int(args.bandMax) + 1)]
+        else:
+            used_diags = [i for i in range(1, int(args.bandMax) + 1)]
     
     if args.chromList == "whole":
         used_chroms = "whole"
@@ -379,7 +367,11 @@ if __name__ == "__main__":
             continue
         chromSize = chromSize // resolution + 1
         chrom_diag = {}
-        for band in range(1, chromSize):
+        if args.includeDiag:
+            band_start = 0
+        else:
+            band_start = 1
+        for band in range(band_start, chromSize):
             if used_diags != "whole" and band not in used_diags:
                 continue
             mat = []
@@ -641,7 +633,7 @@ if __name__ == "__main__":
         chromSize = chromSize // resolution + 1
         band_chrom_diag_pool[chrom] = {}
         for pool_ind in chrom_band_pool[chrom].keys():
-            print(pool_ind)
+            # print(pool_ind)
             init = True
             for band_ind in chrom_band_pool[chrom][pool_ind]:
                 if used_diags != "whole" and band_ind not in used_diags:
@@ -651,8 +643,8 @@ if __name__ == "__main__":
                     band_chrom_diag_pool[chrom][pool_ind] = band_chrom_diag[chrom][band_ind]
                 else:
                     band_chrom_diag_pool[chrom][pool_ind] = np.hstack((band_chrom_diag_pool[chrom][pool_ind], band_chrom_diag[chrom][band_ind]))
-            if pool_ind in band_chrom_diag_pool[chrom].keys():
-                print(band_chrom_diag_pool[chrom][pool_ind].shape)
+            # if pool_ind in band_chrom_diag_pool[chrom].keys():
+            #     print(band_chrom_diag_pool[chrom][pool_ind].shape)
 
     if saveFlag:
         with open(outdir + '/pickle/band_chrom_diag_pool', 'wb') as f:
@@ -673,7 +665,7 @@ if __name__ == "__main__":
         with open(outdir + '/pickle/res', 'wb') as f:
             pickle.dump(res, f)
     
-    print("Writing out latent embeddings.")
+    print("Writing out latent embeddings and normalization counts.")
     
     if not os.path.exists(outdir + '/scVI-3D_norm'):
         os.mkdir(outdir + '/scVI-3D_norm')
