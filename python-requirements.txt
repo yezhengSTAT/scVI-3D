@@ -2,7 +2,7 @@ numpy >= 1.11.*
 scanpy >= 1.7.*
 pandas >= 0.21.0
 anndata >= 0.7.*
-scvi-tools == 0.8.1
+scvi-tools >= 0.14.5
 joblib >= 0.17.0
 torch == 1.4.0
 scikit-learn

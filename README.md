@@ -26,7 +26,7 @@ scVI-3D installation is finished once you successsfully git clone the repository
   - scanpy (>= 1.4.6)
   - pandas (>= 0.21.0)
   - anndata (>= 0.7.1)
-  - [scvi-tools (>= 0.8.1)](https://docs.scvi-tools.org/en/stable/installation.html)
+  - [scvi-tools (>= 0.14.5)](https://docs.scvi-tools.org/en/stable/installation.html)
   - joblib (>= 0.13.2)
   - scikit-learn (>= 0.21.3)
   
