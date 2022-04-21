@@ -7,7 +7,7 @@
 
 The advent of single-cell sequencing technologies in profiling 3D genome organization led to the development of single-cell high-throughput chromatin conformation (scHi-C) assays. To explicitly capture chromatin conformation features and distinguish cells based on their 3D genome organizations, we developed a fast band normalization approach, [BandNorm](https://github.com/sshen82/BandNorm), as well as a deep generative modeling framework, scVI-3D, for more structured modeling of scHi-C data. At the individual cell resolution, heterogeneity driven by the stochastic nature of chromatin fiber, various nuclear processes, and unwanted variation due to sequencing depths and batch effects poses major analytical challenges for inferring single cell-level 3D genome organizations. We develop a deep generative model, named scVI-3D, which systematically takes into account these 3D genome structural properties such as the band bias, sequencing depth effect, zero inflation, sparsity impact, and batch effects of scHi-C data.  scVI-3D is constructed based on the parametric count models of Poisson and Negative Binomial that have been successfully used in bulk measurements of chromatin conformation capture data. Single-cell resolution and the growth in the sizes of emerging scHi-C datasets have created opportunities for exploiting non-linearities in the data. Variational autoencoders offer scalable ways of learning nonlinear maps and have been successfully applied to model measurements from single cells. Motivated by the recent deep learning modeling approaches for single-cell transcription and chromatin accessibility, scVI-3D constructs the generative modeling framework on the band matrices for the dimension reduction and de-noising of scHi-C data.
 
-Current version: 2.0
+Current version: 1.0
 
 ![3DVI Model](/figures/model.png)
 
@@ -72,7 +72,7 @@ pip install -r python-requirements.txt
     batchRemoval  (-br/--batchRemoval)  : Indicator to remove batch or not. Default is False. Adding '-br' to turn it on.
     nLatent       (-n/--nLatent)        : Dimension of latent space. Default is 100.
     includeDiag   (-diag/--includeDiag) : Include diagonal in the normalization and imputation process. Adding '-diag' to include. Default is not include diagonal.
-    poolStrategy  (-pool/--poolStrategy): Default progressive pooling strategy combines off-diagonal 2 and 3, then 4-6, 7-10, and so on. Please refer to the Methods section of the paper for details of the pooling strategy 1, 2, 3, 4, 5. Default is 1.
+    poolStrategy  (-pool/--poolStrategy): Default progressive pooling strategy combines off-diagonal 2 and 3, then 4-6, 7-10, and so on. Please refer to the Methods section of the paper for details of the pooling strategy 1, 2, 3, 4, 5. Setting it to 0 indicate no pooling strategy is implemented. Default is 0.
     
     Path to input and output folders:
     inPath        (-i/--inPath)         : Path to the folder where input scHi-C data are saved.
@@ -93,7 +93,7 @@ pip install -r python-requirements.txt
 ### 3. Running scVI-3D
 
 ```
-python3.7 Path/to/scVI-3D/scripts/scVI-3D.py -b 10 -c "whole" -r 1000000 -i "Path/to/scVI-3D/demoData" -o "Path/to/scVI-3D/results" -cs "Path/to/scVI-3D/supplementaryData/demoData_summary.txt" -g "Path/to/scVI-3D/supplementaryData/hg19.chrom.sizes" -br -n 100 -gpu -p 10 -pca 50 -up -tp -v
+python Path/to/scVI-3D/scripts/scVI-3D.py -b 10 -c "whole" -r 1000000 -i "Path/to/scVI-3D/demoData" -o "Path/to/scVI-3D/results" -cs "Path/to/scVI-3D/supplementaryData/demoData_summary.txt" -g "Path/to/scVI-3D/supplementaryData/hg19.chrom.sizes" -br -n 100 -gpu -p 10 -pca 50 -up -tp -v
 ```
 
 The above test run utilizes gpu and will take ~15min to finish.
@@ -211,5 +211,5 @@ sbatch --nodes=1 --ntasks=1 --cpus-per-task=${cpuN} --threads-per-core=1 --gres=
 In ```run_scVI-3D.sh```,
 
 ```
-python3.7 Path/to/scVI-3D/scripts/scVI-3D.py -b "${bandMax}" -c "${chrom}" -r "${resolution}" -i "${inPath}" -o "${outPath}" -cs "${cellSummary}" -g "${genomeSize}" -br -n 100 -gpu -p "${cpuN}" -pca 50 -up -tp -v
+python Path/to/scVI-3D/scripts/scVI-3D.py -b "${bandMax}" -c "${chrom}" -r "${resolution}" -i "${inPath}" -o "${outPath}" -cs "${cellSummary}" -g "${genomeSize}" -br -n 100 -gpu -p "${cpuN}" -pca 50 -up -tp -v
 ```

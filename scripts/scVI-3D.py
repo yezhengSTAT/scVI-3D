@@ -22,6 +22,9 @@ import anndata
 import scvi
 from joblib import Parallel, delayed
 from sklearn.decomposition import PCA
+# from loguru import logger
+
+print(scvi.__version__)
 
 def create_band_mat(x: np.array, count: np.array, diag: int, maxChromosomeSize: int) -> np.array:
     bandMat = np.zeros(maxChromosomeSize - diag)
@@ -133,10 +136,36 @@ def get_locuspair(imputeM, chromSelect, bandDist):
     
     return normCount
 
+def get_locuspair_for_pooling(imputeM, chromSelect, pool_ind):
+    ## do it for each band
+    start_col_ind = 0
+    init = True
+
+    for bandDist in chrom_band_pool[chromSelect][pool_ind]:
+        end_col_ind = start_col_ind + band_chrom_diag[chromSelect][bandDist].shape[1]
+        imputeM_each = imputeM.iloc[:, start_col_ind:end_col_ind]
+
+        xvars = ['chrA','binA', 'chrB', 'binB', 'count', 'cellID']
+        tmp = imputeM_each.transpose().copy()
+        tmp.index.name = 'binA'
+        normCount_each = pd.melt(tmp.reset_index(), id_vars = ['binA'], var_name='cellID', value_name='count')
+        normCount_each.loc[:,'binA'] = normCount_each.binA.astype(int) - start_col_ind ## adjust to starting from bin 0.
+        normCount_each.loc[:,'binB'] = normCount_each.binA + bandDist
+
+        normCount_each.loc[:,'chrA'] = chromSelect
+        normCount_each.loc[:,'chrB'] = chromSelect
+        normCount_each = normCount_each[xvars]
+        if init:
+            normCount = normCount_each
+            init = False
+        else:
+            normCount = pd.concat((normCount, normCount_each))
+        start_col_ind = end_col_ind ## update starting column for next band
+    
+    return normCount
 
 def normalize(bandM, cellInfo, chromSelect, bandDist, nLatent = 100, batchFlag = False, gpuFlag = False):
 
-    #bandM = band_chrom_diag[chromSelect][bandDist] #pd.read_csv(args.infile, index_col = 0).round(0)
     cellSelect = [i for i, val in enumerate(bandM.sum(axis = 1)>0) if val]
     if len(cellSelect) == 0:
         normCount = None
@@ -155,9 +184,9 @@ def normalize(bandM, cellInfo, chromSelect, bandDist, nLatent = 100, batchFlag =
             scvi.data.setup_anndata(adata, batch_key = 'batch')
         else:
             scvi.data.setup_anndata(adata)
-        model = scvi.model.SCVI(adata, n_latent = nLatent, use_cuda = gpuFlag)
+        model = scvi.model.SCVI(adata, n_latent = nLatent)
     
-        model.train()
+        model.train(use_gpu = gpuFlag)
 
         if(batchFlag is True):
             imputeTmp = np.zeros((len(cellSelect), bandM.shape[1]))
@@ -176,6 +205,47 @@ def normalize(bandM, cellInfo, chromSelect, bandDist, nLatent = 100, batchFlag =
 
     return(latentDF, normCount)
 
+# @logger.catch
+def normalize_for_pooling(bandM, cellInfo, chromSelect, pool_ind, nLatent = 100, batchFlag = False, gpuFlag = False):
+
+    cellSelect = [i for i, val in enumerate(bandM.sum(axis = 1)>0) if val]
+    if len(cellSelect) == 0:
+        normCount = None
+        latentDF = pd.DataFrame(np.zeros((len(bandM), nLatent)), index = range(len(bandM)))
+        
+    else:
+        bandDepth = bandM[cellSelect,].sum(axis = 1).mean()
+        adata = sc.AnnData(bandM)
+    
+        if(batchFlag is True):
+            adata.obs['batch'] = cellInfo['batch'].values
+    
+        sc.pp.filter_cells(adata, min_counts=1)
+
+        if(batchFlag is True):
+            scvi.data.setup_anndata(adata, batch_key = 'batch')
+        else:
+            scvi.data.setup_anndata(adata)
+        model = scvi.model.SCVI(adata, n_latent = nLatent)
+    
+        model.train(use_gpu = gpuFlag)
+
+        if(batchFlag is True):
+            imputeTmp = np.zeros((len(cellSelect), bandM.shape[1]))
+            for batchName in list(set(cellInfo['batch'].values)):
+                imputeTmp = imputeTmp + model.get_normalized_expression(library_size = bandDepth, transform_batch = batchName)
+            imputeM = imputeTmp/len(list(set(cellInfo['batch'].values)))
+
+        else:
+            imputeM = model.get_normalized_expression(library_size = bandDepth)
+        
+        normCount = get_locuspair_for_pooling(imputeM, chromSelect, pool_ind)
+
+        latent = model.get_latent_representation()
+        latentDF = pd.DataFrame(latent, index = cellSelect)
+        latentDF = latentDF.reindex([i for i in range(len(bandM))]).fillna(0)
+
+    return(latentDF, normCount)
 
 
 def get_args():
@@ -188,7 +258,7 @@ def get_args():
     parser.add_argument('-br', '--batchRemoval', help = 'Indicator to remove batch or not. Default is False.', action='store_true')
     parser.add_argument('-n', '--nLatent', help = 'Dimension of latent space. Default is 100.', default = 100)
     parser.add_argument('-diag', '--includeDiag', help = 'Include diagonal in the normalization and imputation process. Default is not include.', action='store_true')
-    parser.add_argument('-pool', '--poolStrategy', help = 'Pooling strategy: 1, 2, 3, 4, 5.', default = 1)
+    parser.add_argument('-pool', '--poolStrategy', help = 'Pooling strategy: 0, 1, 2, 3, 4, 5. 0 indicates no pooling strategy.', default = 0)
     parser.add_argument('-i', '--inPath', help = 'Path to the folder where input scHi-C data are saved.', default = None)
     parser.add_argument('-o', '--outdir', help = 'Path to output directory.', default = None)
     parser.add_argument('-cs', '--cellSummary', help = '(Optional) Cell summary file with columns names to be "name" for scHi-C data file name including extension, "batch" for batch factor, "cell_type" for cluster or cell type label (tab separated file).', default = None)
@@ -247,8 +317,8 @@ def get_args():
         parser.print_help()
         sys.exit()
         
-    if int(args.poolStrategy) not in [1, 2, 3, 4, 5, 6, 7]:
-        print("Please select one pooling strategy from 1, 2, 3, 4, 5. Default is 1.")
+    if int(args.poolStrategy) not in [0, 1, 2, 3, 4, 5, 6, 7]:
+        print("Please select one pooling strategy from 0, 1, 2, 3, 4, 5. Default is 0.")
         parser.print_help()
         sys.exit()
     
@@ -626,41 +696,52 @@ if __name__ == "__main__":
                     pool_ind = pool_ind + 1
                     
     print("Start pooling cell x locus-pair matrix.")
-    band_chrom_diag_pool = {}
-    for chrom, chromSize in binSizeDict.items():
-        if used_chroms != "whole" and chrom not in used_chroms:
-            continue
-        chromSize = chromSize // resolution + 1
-        band_chrom_diag_pool[chrom] = {}
-        for pool_ind in chrom_band_pool[chrom].keys():
-            # print(pool_ind)
-            init = True
-            for band_ind in chrom_band_pool[chrom][pool_ind]:
-                if used_diags != "whole" and band_ind not in used_diags:
-                    continue
-                if(init == True):
-                    init = False
-                    band_chrom_diag_pool[chrom][pool_ind] = band_chrom_diag[chrom][band_ind]
-                else:
-                    band_chrom_diag_pool[chrom][pool_ind] = np.hstack((band_chrom_diag_pool[chrom][pool_ind], band_chrom_diag[chrom][band_ind]))
-            # if pool_ind in band_chrom_diag_pool[chrom].keys():
-            #     print(band_chrom_diag_pool[chrom][pool_ind].shape)
+    if int(args.poolStrategy) != 0: ## pooling
+        band_chrom_diag_pool = {}
+        for chrom, chromSize in binSizeDict.items():
+            if used_chroms != "whole" and chrom not in used_chroms:
+                continue
+            chromSize = chromSize // resolution + 1
+            band_chrom_diag_pool[chrom] = {}
+            for pool_ind in chrom_band_pool[chrom].keys():
+                # print(pool_ind)
+                init = True
+                for band_ind in chrom_band_pool[chrom][pool_ind]:
+                    if used_diags != "whole" and band_ind not in used_diags:
+                        continue
+                    if(init == True):
+                        init = False
+                        band_chrom_diag_pool[chrom][pool_ind] = band_chrom_diag[chrom][band_ind]
+                    else:
+                        band_chrom_diag_pool[chrom][pool_ind] = np.hstack((band_chrom_diag_pool[chrom][pool_ind], band_chrom_diag[chrom][band_ind]))
+                # if pool_ind in band_chrom_diag_pool[chrom].keys():
+                #     print(band_chrom_diag_pool[chrom][pool_ind].shape)
 
-    if saveFlag:
-        with open(outdir + '/pickle/band_chrom_diag_pool', 'wb') as f:
-            pickle.dump(band_chrom_diag_pool, f)
+        if saveFlag:
+            with open(outdir + '/pickle/band_chrom_diag_pool', 'wb') as f:
+                pickle.dump(band_chrom_diag_pool, f)
+    
 
     ## scVI-3D
     print("scVI-3D normalization.")
-    bandMiter = [[bandM, chromSelect, bandDist] for chromSelect, band_diags in band_chrom_diag.items() for bandDist, bandM in band_diags.items()]
     nLatent = int(args.nLatent) #int(args.nLatent)
     batchFlag = args.batchRemoval
     gpuFlag = args.gpuFlag
 
-    if coreN == 1:
-        res = [normalize(bandM, cellInfo, chromSelect, bandDist, nLatent, batchFlag, gpuFlag) for bandM, chromSelect, bandDist in bandMiter]
+    if int(args.poolStrategy) != 0: ## pooling
+        bandMiter = [[bandM, chromSelect, pool_ind] for chromSelect, band_diags in band_chrom_diag_pool.items() for pool_ind, bandM in band_diags.items()]
+        if coreN == 1:
+            res = [normalize_for_pooling(bandM, cellInfo, chromSelect, pool_ind, nLatent, batchFlag, gpuFlag) for bandM, chromSelect, pool_ind in bandMiter]
+        else:
+            res = Parallel(n_jobs=coreN,backend='multiprocessing')(delayed(normalize_for_pooling)(bandM, cellInfo, chromSelect, pool_ind, nLatent, batchFlag, gpuFlag) for bandM, chromSelect, pool_ind in bandMiter)
+
     else:
-        res = Parallel(n_jobs=coreN,backend='multiprocessing')(delayed(normalize)(bandM, cellInfo, chromSelect, bandDist, nLatent, batchFlag, gpuFlag) for bandM, chromSelect, bandDist in bandMiter)
+        bandMiter = [[bandM, chromSelect, bandDist] for chromSelect, band_diags in band_chrom_diag.items() for bandDist, bandM in band_diags.items()]
+        if coreN == 1:
+            res = [normalize(bandM, cellInfo, chromSelect, bandDist, nLatent, batchFlag, gpuFlag) for bandM, chromSelect, bandDist in bandMiter]
+        else:
+            res = Parallel(n_jobs=coreN,backend='multiprocessing')(delayed(normalize)(bandM, cellInfo, chromSelect, bandDist, nLatent, batchFlag, gpuFlag) for bandM, chromSelect, bandDist in bandMiter)
+
     if saveFlag:
         with open(outdir + '/pickle/res', 'wb') as f:
             pickle.dump(res, f)
@@ -677,6 +758,8 @@ if __name__ == "__main__":
             fname = outdir + '/scVI-3D_norm/' + cells[int(cellId)].split('/')[-1]
             if os.path.exists(fname):
                 os.remove(fname)
+            cellDf["binA"] = cellDf["binA"] * resolution ## add back the resolution
+            cellDf["binB"] = cellDf["binB"] * resolution
             cellDf.drop(columns=['cellID']).to_csv(fname, sep='\t', header=False, index=False, mode='a')
     
     print('Writing out normalization count.')
@@ -685,15 +768,19 @@ if __name__ == "__main__":
             continue
         for cellId, cellDf in res[i][1].groupby('cellID'):
             fname = outdir + '/scVI-3D_norm/' + cells[int(cellId)].split('/')[-1]
+            cellDf["binA"] = cellDf["binA"] * resolution
+            cellDf["binB"] = cellDf["binB"] * resolution
             cellDf.drop(columns=['cellID']).to_csv(fname, sep='\t', header=False, index=False, mode='a')
     
-    ## concatenate latent embeddings across band matrices
+    print('Writing out full latent embeddings.')
+   ## concatenate latent embeddings across band matrices
     latentList = [res[i][0] for i in range(len(res))]
     latentM = pd.concat(latentList, axis = 1)
     if not os.path.exists(outdir + '/latentEmbeddings'):
         os.mkdir(outdir + '/latentEmbeddings')
     pd.DataFrame(latentM).to_csv(outdir + '/latentEmbeddings/scVI-3D_norm_latentEmbeddingFull.txt', sep = '\t', header = False, index = False)
     
+    print('Writing out PCA latent embeddings.')
     ## obtain the PCA latent embeddings as well
     pca = PCA(n_components = int(args.pcaNum))
     latentPCA = pca.fit_transform(latentM)
@@ -703,13 +790,15 @@ if __name__ == "__main__":
     ## Visualization
     if args.umapPlot:
         print("UMAP visualization.")
+
+        
         if not os.path.exists(outdir + '/figures/'):
             os.mkdir(outdir + '/figures/')
         import matplotlib.pyplot as plt
         import umap
         reducer = umap.UMAP()
         latentUMAP = reducer.fit_transform(latentPCA)
-
+        
         colorDict = dict(zip(set(cellInfo.cell_type), range(len(set(cellInfo.cell_type)))))
         cellLabel = [colorDict[cellInfo['cell_type'][i]] for i in range(len(cellInfo))]
  
