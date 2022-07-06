@@ -22,13 +22,13 @@ Current version: 1.0
 git clone https://github.com/yezhengSTAT/scVI-3D
 ```
 scVI-3D installation is finished once you successsfully git clone the repository. We provide a demo scHi-C data, sampled 400 cells of Astro, ODC, MG, Sst, four cell types from [Lee et al. 2019. Nature Methods.](https://www.nature.com/articles/s41592-019-0547-z) for test run.  The raw input data will be downloaded with this repository. In preparation for such run, you will need to have python (>=3.7) available on your server with corresponding modules required: 
-  - numpy (>= 1.11.3)
+  - numpy (>= 1.20.3)
   - scanpy (>= 1.4.6)
-  - pandas (>= 0.21.0)
-  - anndata (>= 0.7.1)
+  - pandas (>= 1.2.4)
+  - anndata (>= 0.7.5)
   - [scvi-tools (>= 0.14.5)](https://docs.scvi-tools.org/en/stable/installation.html)
-  - joblib (>= 0.13.2)
-  - scikit-learn (>= 0.21.3)
+  - joblib (>= 1.1.0)
+  - scikit-learn (>= 0.24.2)
   
 If you want to get the UMAP and t-SNE visualization, you will need two more modules installed:
   - matplotlib (>=3.1.1)
@@ -41,7 +41,7 @@ If you want to get the UMAP and t-SNE visualization, you will need two more modu
  - 2. Build conda environment:
 
 ```
-conda env create -f scVI-3D_conda_environment.yml
+conda create -n schic-scvi-3d python=3.8
 ```
 
 
@@ -52,6 +52,12 @@ conda activate schic-scvi-3d
 ```
 
 To deactivate conda enviorment, use ```conda deactivate```.
+
+```
+conda install scvi-tools -c conda-forge
+```
+
+Other necessary modules should have been installed as well.
 
 #### 1.2 Install through ```pip```:
 
