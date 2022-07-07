@@ -38,26 +38,28 @@ If you want to get the UMAP and t-SNE visualization, you will need two more modu
 
 - 1. Install [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html).
 
- - 2. Build conda environment:
+- 2. Option 1: Install scvi-tools by the following codes and other necessary modules should have been installed as well:
 
 ```
+## Build conda environment:
 conda create -n schic-scvi-3d python=3.8
-```
 
-
- - 3. Active conda environment for scVI-3D:
-
-```
+## Active conda environment for scVI-3D:
 conda activate schic-scvi-3d
-```
 
-To deactivate conda enviorment, use ```conda deactivate```.
-
-```
+## Install scvi-tools:
 conda install scvi-tools -c conda-forge
 ```
+To deactivate conda enviorment, use ```conda deactivate```.
 
-Other necessary modules should have been installed as well.
+Option 2: Install the conda environment from the environment.yml file:
+
+```
+conda env create -f scVI-3D_conda_environment.yml
+
+## Active conda environment for scVI-3D:
+conda activate schic-scvi-3d
+```
 
 #### 1.2 Install through ```pip```:
 
