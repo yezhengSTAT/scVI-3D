@@ -221,3 +221,7 @@ In ```run_scVI-3D.sh```,
 ```
 python Path/to/scVI-3D/scripts/scVI-3D.py -b "${bandMax}" -c "${chrom}" -r "${resolution}" -i "${inPath}" -o "${outPath}" -cs "${cellSummary}" -g "${genomeSize}" -br -n 100 -gpu -p "${cpuN}" -pca 50 -up -tp -v
 ```
+
+## Licenses
+
+scVI-3D is GNU GPL 3 licensed. Please refer to LICENSE.md for using scVI-3D for your own purposes.
